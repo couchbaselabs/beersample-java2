@@ -1,0 +1,13 @@
+*.class
+target
+.classpath
+.settings
+org.eclipse.*
+repos
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+.DS_Store

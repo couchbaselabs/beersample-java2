@@ -1,0 +1,11 @@
+<div th:include="header">...</div>
+<div id="container">
+	<h3 th:text="${beer}? |Show details for ${beer.name}| : 'Beer Not Found!'"> beer name</h3>
+	<table  class="table table-striped">
+		<tr th:each="item : ${beer}">
+			<td th:text="${item.getKey()}">text</td>
+			<td th:text="${item.getValue()}">text</td>
+		</tr>
+	 </table>
+</div>
+<div th:include="footer">...</div>

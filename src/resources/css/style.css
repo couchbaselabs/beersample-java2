@@ -1,0 +1,61 @@
+body {
+	font-size: 14px;
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+hr {
+	margin-left:auto;
+	margin-right:auto;
+	width: 700px;
+	border: 0;
+	border-top: 1px solid #f5f5f5;
+	border-bottom: 1px solid #ffffff;
+}
+
+#container {
+	width: 700px;
+	margin-left: auto;
+	margin-right:auto;
+}
+
+#header-left {
+	position: relative;
+	top: 15px;
+	float: left;
+	color: #999999;
+	font-family: 'Telex',sans-serif;
+	padding-right: 75px;
+}
+
+#header-right > a {
+	position: relative;
+	top: 35px;
+	color: #2fa4e7;
+	text-decoration: none;
+	margin-left: 25px;
+}
+
+#left {
+	width: 350px;
+	float: left;
+	margin-bottom: 50px;
+}
+
+#right {
+	width: 349px;
+	float: right;
+	margin-bottom: 50px;
+}
+
+#footer {
+	margin-top: 50px;
+}
+
+@font-face {
+  font-family: 'Telex';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Telex-Regular'), url(https://fonts.gstatic.com/s/telex/v4/yW5xjU7g_M4uGcfkhVTIhIDGDUGfDkXyfkzVDelzfFk.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+

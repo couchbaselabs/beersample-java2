@@ -1,0 +1,18 @@
+<div th:include="header">...</div>
+<div id="container">
+	<h3>Browse Beers</h3>
+	<p th:text="${deleted}">beer name</p>
+	<div id="table">
+		<table class="table table-striped">
+			<tr>
+				<td>Name</td><td>Brewery</td><td>Edit</td><td>Delete</td>
+			</tr>
+			<tr th:each="beer : ${beers}">
+				<td><a th:href="@{/beers/(beer=${beer.id()})}" th:text="${beer.key()}">text</a></td>
+				<td><a th:href="@{/beers/(beer=${beer.value()})}">To Brewery</a></td>
+				<td><a class="btn btn-small btn-warning" th:href="@{/beer/edit/(beer=${beer.id()})}">Edit</a></td><td><a class="btn btn-small btn-danger" th:href="@{/beer/delete/(beer=${beer.id()})}">Delete</a></td>
+			</tr>
+		 </table>
+	</div>
+</div>
+<div th:include="footer">...</div>
