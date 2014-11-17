@@ -1,0 +1,6 @@
+couchbase:
+  bucket: beer-sample
+  password:
+  nodes: 192.168.67.101
+
+logging.level.com.couchbase: DEBUG

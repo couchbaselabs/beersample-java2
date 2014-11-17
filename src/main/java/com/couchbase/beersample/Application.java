@@ -19,30 +19,22 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALING
  * IN THE SOFTWARE.
  */
-
 package com.couchbase.beersample;
 
-import org.springframework.boot.*;
-import org.springframework.boot.autoconfigure.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.*;
-import org.springframework.web.bind.annotation.*;
 
-import com.couchbase.client.core.logging.CouchbaseLoggerFactory;
-import com.couchbase.client.core.logging.Log4JLoggerFactory;
-
-@ComponentScan
-@Controller
+/**
+ * Main Application class for the beer example
+ *
+ * @author Simon Baslé
+ * @since 1.0
+ */
 @EnableAutoConfiguration
+@ComponentScan
 public class Application {
-	
-    @RequestMapping("/")
-    String home() {
-        return "index";
-    }
-
-    public static void main(String[] args) throws Exception {
+    public static void main(String... args) {
         SpringApplication.run(Application.class, args);
-        CouchbaseLoggerFactory.setDefaultFactory(new Log4JLoggerFactory());
     }
 }
