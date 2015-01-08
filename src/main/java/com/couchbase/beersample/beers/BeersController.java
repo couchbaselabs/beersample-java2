@@ -30,6 +30,8 @@ import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.view.AsyncViewResult;
+import com.couchbase.client.java.view.AsyncViewRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
@@ -43,6 +45,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import rx.Observable;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
 
 /**
  * REST CRUD Controller for beers
@@ -148,6 +154,73 @@ public class BeersController {
                 keys.add(beer);
             }
             return new ResponseEntity<String>(keys.toString(), HttpStatus.OK);
+        }
+    }
+
+    //===== Here is a more advanced example, using Async API to search in Beer names =====
+
+    @RequestMapping(method = RequestMethod.GET, value = "/search/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> searchBeer(@PathVariable final String token) {
+        //we'll get all beers asynchronously and compose on the stream to extract those that match
+        ViewQuery allBeers = ViewQuery.from("beer", "by_name");
+        AsyncViewResult result = bucket.async().query(allBeers).toBlocking().single();
+        if (result.success()) {
+            return result.rows()
+                    //extract the document from the row and carve a result object using its content and id
+                    .flatMap(new Func1<AsyncViewRow, Observable<JsonObject>>() {
+                        @Override
+                        public Observable<JsonObject> call(AsyncViewRow row) {
+                            return row.document().map(new Func1<JsonDocument, JsonObject>() {
+                                @Override
+                                public JsonObject call(JsonDocument jsonDocument) {
+                                    return JsonObject.create()
+                                            .put("id", jsonDocument.id())
+                                            .put("name", jsonDocument.content().getString("name"))
+                                            .put("detail", jsonDocument.content());
+                                }
+                            });
+                        }
+                    })
+                    //reject beers that don't match the partial name
+                    .filter(new Func1<JsonObject, Boolean>() {
+                        @Override
+                        public Boolean call(JsonObject jsonObject) {
+                            String name = jsonObject.getString("name");
+                            return name != null && name.toLowerCase().contains(token.toLowerCase());
+                        }
+                    })
+                    //collect results into a JSON array (one could also just use toList() since a List would be
+                    // transcoded into a JSON array)
+                    .collect(new Func0<JsonArray>() { //this creates the array (once)
+                        @Override
+                        public JsonArray call() {
+                            return JsonArray.empty();
+                        }
+                    }, new Action2<JsonArray, JsonObject>() { //this populates the array (each item)
+                        @Override
+                        public void call(JsonArray objects, JsonObject jsonObject) {
+                            objects.add(jsonObject);
+                        }
+                    })
+                    //transform the array into a ResponseEntity with correct status
+                    .map(new Func1<JsonArray, ResponseEntity<String>>() {
+                        @Override
+                        public ResponseEntity<String> call(JsonArray objects) {
+                            return new ResponseEntity<String>(objects.toString(), HttpStatus.OK);
+                        }
+                    })
+                    //in case of errors during this processing, return a ERROR 500 response with detail
+                    .onErrorReturn(new Func1<Throwable, ResponseEntity<String>>() {
+                        @Override
+                        public ResponseEntity<String> call(Throwable throwable) {
+                            return new ResponseEntity<String>("Error while parsing results - " + throwable,
+                                    HttpStatus.INTERNAL_SERVER_ERROR);
+                        }
+                    }).toBlocking().single(); //block and send back the response
+
+        } else {
+            return new ResponseEntity<String>("Error while searching - " + result.error(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

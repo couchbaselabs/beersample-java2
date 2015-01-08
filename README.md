@@ -26,6 +26,20 @@ The REST API is deployed on port 8080 and has the following routes:
  * `PUT /beer/{id}`: with a jsonObject in body representing the updated beer data, updates a beer of id {id}
  * `DELETE /beer/{id}`: deletes the beer of id {id}
  * `GET /beer`: list all the beers, just outputting the beers `id` and `name` in an array of JSON objects
+ * `GET /beer/search/{partOfName}`: list all the beers which name's contains {partOfName} (ignoring case). Each returned
+ beer is represented as a JSON object with the beer's `id` and `name` and the whoe beer details under `detail`.
+
+```
+{
+    "id": "theBeerId",
+    "name": "The Beer",
+    "detail": {
+        "name": "The Beer",
+        "category": "German Ale",
+        ...
+    }
+}
+```
 
 ### Brewery Routes
  * `GET /brewery/{id}`: retrieve the details of brewery {id}, along with the list of beers produced by this brewery (in
