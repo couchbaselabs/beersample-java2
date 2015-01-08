@@ -13,3 +13,18 @@ A sample application for the Java SDK 2.0 and Couchbase Server 3.0
          emit(doc.name, doc.brewery_id)
        }
      }`
+
+
+## REST API
+The REST API is deployed on port 8080 and has the following routes:
+
+### Beer Routes
+ * `GET /beer/{id}`: retrieve the Beer with id {id} (one json object representing the beer)
+ * `POST /beer`: with a jsonObject in body representing the beer data, creates a new beer
+ * `PUT /beer/{id}`: with a jsonObject in body representing the updated beer data, updates a beer of id {id}
+ * `DELETE /beer/{id}`: deletes the beer of id {id}
+ * `GET /beer`: list all the beers, just outputting the beers `id` and `name` in an array of JSON objects
+
+### Brewery Routes
+ * `GET /brewery/{id}`: retrieve the details of brewery {id}, along with the list of beers produced by this brewery (in
+ a sub-array `beers`, one JSON object for each beer's detail).
