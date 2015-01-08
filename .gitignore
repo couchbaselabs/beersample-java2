@@ -11,3 +11,5 @@ repos
 *.ear
 
 .DS_Store
+.idea
+*.iml
