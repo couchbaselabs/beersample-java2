@@ -99,7 +99,10 @@ public class BreweriesController {
                     public JsonDocument call(JsonDocument breweryDoc, List<JsonDocument> beersDoc) {
                         JsonArray beers = JsonArray.create();
                         for (JsonDocument beerDoc : beersDoc) {
-                            beers.add(beerDoc.content());
+                            JsonObject beer = JsonObject.create()
+                                    .put("id", beerDoc.id())
+                                    .put("beer", beerDoc.content());
+                            beers.add(beer);
                         }
                         breweryDoc.content().put("beers", beers);
                         return breweryDoc;

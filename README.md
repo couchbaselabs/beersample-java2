@@ -8,12 +8,14 @@ A sample application for the Java SDK 2.0 and Couchbase Server 3.0
  - The beer/brewery_beers view (built in in beersample sample)
  - An additional view beer/by_name with the following map function (you should copy the beer designdoc to dev in order
  to edit it and add this view):
-    `function (doc, meta) {
+
+```
+    function (doc, meta) {
        if (doc.type == "beer") {
          emit(doc.name, doc.brewery_id)
        }
-     }`
-
+     }
+```
 
 ## REST API
 The REST API is deployed on port 8080 and has the following routes:
@@ -27,4 +29,18 @@ The REST API is deployed on port 8080 and has the following routes:
 
 ### Brewery Routes
  * `GET /brewery/{id}`: retrieve the details of brewery {id}, along with the list of beers produced by this brewery (in
- a sub-array `beers`, one JSON object for each beer's detail).
+ a sub-array `beers`, one JSON object for each beer having the beer's id under `id` and the beer's detail under `beer`).
+
+```
+"beers": [
+    {
+        "id": "theBeerId",
+        "beer": {
+            "name": "someBeer",
+            "category": "German Ale",
+            ...
+        }
+    },
+    ...
+]
+```
