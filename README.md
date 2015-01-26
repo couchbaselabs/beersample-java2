@@ -17,6 +17,17 @@ A sample application for the Java SDK 2.0 and Couchbase Server 3.0
      }
 ```
 
+## Building and running
+Correctly configure the application for your couchbase installation by editing **`src/main/resources/application.yml`**.
+
+To build a self-contained jar of the application, run the following Maven command:
+
+    mvn clean package
+
+To run the application and expose the REST API on `localhost:8080`, run the following command:
+
+    java -jar target/beersample2-1.0-SNAPSHOT.jar
+
 ## REST API
 The REST API is deployed on port 8080 and has the following routes:
 
