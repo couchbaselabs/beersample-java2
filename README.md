@@ -4,8 +4,8 @@ beersample-java2
 A sample application for the Java SDK 2.0 and Couchbase Server 3.0
 
 *Note: this is a rewrite of the previous SDK 2.0 tutorial material, for 2.1+ releases.
-You can find the previous material on the **oldtutorial** branch, see it
-[here on github](https://github.com/couchbaselabs/beersample-java2/tree/oldtutorial).*
+You can find the previous material on the __oldtutorial__ branch, see it*
+[here on github](https://github.com/couchbaselabs/beersample-java2/tree/oldtutorial).
 
 ## What's needed?
  - The beersample sample bucket
