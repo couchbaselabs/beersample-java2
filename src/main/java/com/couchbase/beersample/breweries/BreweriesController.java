@@ -23,6 +23,7 @@ package com.couchbase.beersample.breweries;
 
 import java.util.List;
 
+import com.couchbase.beersample.CouchbaseService;
 import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
@@ -56,25 +57,21 @@ public class BreweriesController {
 
     private static final Logger LOGGER =  LoggerFactory.getLogger(BreweriesController.class);
 
-    private final AsyncBucket bucket;
+    private final CouchbaseService couchbaseService;
 
     @Autowired
-    public BreweriesController(final Bucket bucket) {
-        this.bucket = bucket.async();
+    public BreweriesController(final CouchbaseService couchbaseService) {
+        this.couchbaseService = couchbaseService;
     }
 
     @RequestMapping("/{id}")
     public ResponseEntity<String> getBrewery(@PathVariable String id) {
 
-        ViewQuery forBrewery = ViewQuery.from("beer", "brewery_beers");
-        forBrewery.startKey(JsonArray.from(id));
-        //the trick here is that sorting is UTF8 base, uefff is the largest UTF8 char
-        forBrewery.endKey(JsonArray.from(id, "\uefff"));
+        ViewQuery forBrewery = CouchbaseService.createQueryBeersForBrewery(id);
 
-        Observable<JsonDocument> brewery = bucket.get(id);
-        Observable<List<JsonDocument>> beers = bucket
-                //get all beers for this brewery
-                .query(forBrewery)
+        Observable<JsonDocument> brewery = couchbaseService.asyncRead(id);
+        Observable<List<JsonDocument>> beers =
+                couchbaseService.findBeersForBreweryAsync(id)
                 //extract rows from the result
                 .flatMap(new Func1<AsyncViewResult, Observable<AsyncViewRow>>() {
                     @Override
@@ -93,21 +90,7 @@ public class BreweriesController {
 
         //in the next observable we'll transform list of brewery-beer pairs into an array of beers
         //then we'll inject it into the associated brewery jsonObject
-        Observable<JsonDocument> fullBeers = Observable.zip(brewery, beers,
-                new Func2<JsonDocument, List<JsonDocument>, JsonDocument>() {
-                    @Override
-                    public JsonDocument call(JsonDocument breweryDoc, List<JsonDocument> beersDoc) {
-                        JsonArray beers = JsonArray.create();
-                        for (JsonDocument beerDoc : beersDoc) {
-                            JsonObject beer = JsonObject.create()
-                                    .put("id", beerDoc.id())
-                                    .put("beer", beerDoc.content());
-                            beers.add(beer);
-                        }
-                        breweryDoc.content().put("beers", beers);
-                        return breweryDoc;
-                    }
-                })
+        Observable<JsonDocument> fullBeers = couchbaseService.concatBeerInfoToBrewery(brewery, beers)
                 //take care of the case where no corresponding brewery info was found
                 .singleOrDefault(JsonDocument.create("empty",
                         JsonObject.create().put("error", "brewery " + id + " not found")))

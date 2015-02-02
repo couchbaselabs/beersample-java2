@@ -49,12 +49,15 @@ public class Database {
     @Value("${couchbase.password}")
     private String password;
 
-    private Cluster cluster() {
-        return CouchbaseCluster.create(nodes);
+    public List<String> getNodes() {
+        return nodes;
     }
 
-    @Bean
-    public Bucket bucket() {
-        return cluster().openBucket(bucket, password);
+    public String getBucket() {
+        return bucket;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }

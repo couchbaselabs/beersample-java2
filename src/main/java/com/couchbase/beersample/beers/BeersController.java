@@ -24,6 +24,7 @@ package com.couchbase.beersample.beers;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.couchbase.beersample.CouchbaseService;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.json.JsonArray;
@@ -60,16 +61,16 @@ import rx.functions.Func1;
 @RequestMapping("/beer")
 public class BeersController {
 
-    private final Bucket bucket;
+    private final CouchbaseService couchbaseService;
 
     @Autowired
-    public BeersController(final Bucket bucket) {
-        this.bucket = bucket;
+    public BeersController(CouchbaseService couchbaseService) {
+        this.couchbaseService = couchbaseService;
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> getBeer(@PathVariable String id) {
-        JsonDocument doc = bucket.get(id);
+        JsonDocument doc = couchbaseService.read(id);
         if (doc != null) {
             return new ResponseEntity<String>(doc.content().toString(), HttpStatus.OK);
         } else {
@@ -83,7 +84,8 @@ public class BeersController {
         try {
             JsonObject beer = parseBeer(beerData);
             id = "beer-" + beer.getString("name");
-            bucket.insert(JsonDocument.create(id, beer));
+            JsonDocument doc = CouchbaseService.createDocument(id, beer);
+            couchbaseService.create(doc);
             return new ResponseEntity<String>(id, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
@@ -96,7 +98,7 @@ public class BeersController {
 
     @RequestMapping(method = RequestMethod.DELETE, value = "/{beerId}")
     public ResponseEntity<String> deleteBeer(@PathVariable String beerId) {
-        JsonDocument deleted = bucket.remove(beerId);
+        JsonDocument deleted = couchbaseService.delete(beerId);
         return new ResponseEntity<String>(""+deleted.cas(), HttpStatus.OK);
     }
 
@@ -104,7 +106,7 @@ public class BeersController {
     public ResponseEntity<String> updateBeer(@PathVariable String beerId, @RequestBody Map<String, Object> beerData) {
         try {
             JsonObject beer = parseBeer(beerData);
-            bucket.replace(JsonDocument.create(beerId, beer));
+            couchbaseService.update(CouchbaseService.createDocument(beerId, beer));
             return new ResponseEntity<String>(beerId, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
@@ -132,14 +134,7 @@ public class BeersController {
     @RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> listBeers(@RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer limit) {
-        ViewQuery query = ViewQuery.from("beer", "by_name");
-        if (limit != null && limit > 0) {
-            query.limit(limit);
-        }
-        if (offset != null && offset > 0) {
-            query.skip(offset);
-        }
-        ViewResult result = bucket.query(query);
+        ViewResult result = couchbaseService.findAllBeers(offset, limit);
         if (!result.success()) {
             //TODO maybe detect type of error and change error code accordingly
             return new ResponseEntity<String>(result.error().toString(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -157,51 +152,12 @@ public class BeersController {
         }
     }
 
-    //===== Here is a more advanced example, using Async API to search in Beer names =====
-
     @RequestMapping(method = RequestMethod.GET, value = "/search/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> searchBeer(@PathVariable final String token) {
         //we'll get all beers asynchronously and compose on the stream to extract those that match
-        ViewQuery allBeers = ViewQuery.from("beer", "by_name");
-        AsyncViewResult result = bucket.async().query(allBeers).toBlocking().single();
-        if (result.success()) {
-            return result.rows()
-                    //extract the document from the row and carve a result object using its content and id
-                    .flatMap(new Func1<AsyncViewRow, Observable<JsonObject>>() {
-                        @Override
-                        public Observable<JsonObject> call(AsyncViewRow row) {
-                            return row.document().map(new Func1<JsonDocument, JsonObject>() {
-                                @Override
-                                public JsonObject call(JsonDocument jsonDocument) {
-                                    return JsonObject.create()
-                                            .put("id", jsonDocument.id())
-                                            .put("name", jsonDocument.content().getString("name"))
-                                            .put("detail", jsonDocument.content());
-                                }
-                            });
-                        }
-                    })
-                    //reject beers that don't match the partial name
-                    .filter(new Func1<JsonObject, Boolean>() {
-                        @Override
-                        public Boolean call(JsonObject jsonObject) {
-                            String name = jsonObject.getString("name");
-                            return name != null && name.toLowerCase().contains(token.toLowerCase());
-                        }
-                    })
-                    //collect results into a JSON array (one could also just use toList() since a List would be
-                    // transcoded into a JSON array)
-                    .collect(new Func0<JsonArray>() { //this creates the array (once)
-                        @Override
-                        public JsonArray call() {
-                            return JsonArray.empty();
-                        }
-                    }, new Action2<JsonArray, JsonObject>() { //this populates the array (each item)
-                        @Override
-                        public void call(JsonArray objects, JsonObject jsonObject) {
-                            objects.add(jsonObject);
-                        }
-                    })
+        AsyncViewResult viewResult = couchbaseService.findAllBeersAsync().toBlocking().single();
+        if (viewResult.success()) {
+            return couchbaseService.searchBeer(viewResult.rows(), token)
                     //transform the array into a ResponseEntity with correct status
                     .map(new Func1<JsonArray, ResponseEntity<String>>() {
                         @Override
@@ -216,10 +172,11 @@ public class BeersController {
                             return new ResponseEntity<String>("Error while parsing results - " + throwable,
                                     HttpStatus.INTERNAL_SERVER_ERROR);
                         }
-                    }).toBlocking().single(); //block and send back the response
-
+                    })
+                    //block and send back the response
+                   .toBlocking().single();
         } else {
-            return new ResponseEntity<String>("Error while searching - " + result.error(),
+            return new ResponseEntity<String>("Error while searching - " + viewResult.error(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
