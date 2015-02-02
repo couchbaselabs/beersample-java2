@@ -19,22 +19,42 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALING
  * IN THE SOFTWARE.
  */
-package com.couchbase.beersample;
+package com.couchbase.beersample.config;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.ComponentScan;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.CouchbaseCluster;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * Main Application class for the beer example
+ * Configuration and beans for couchbase bucket
  *
  * @author Simon Baslé
  * @since 1.0
  */
-@EnableAutoConfiguration
-@ComponentScan
-public class Application {
-    public static void main(String... args) {
-        SpringApplication.run(Application.class, args);
+@Configuration
+public class Database {
+
+    @Value("${couchbase.nodes}")
+    private List<String> nodes = new ArrayList<String>();
+
+    @Value("${couchbase.bucket}")
+    private String bucket;
+
+    @Value("${couchbase.password}")
+    private String password;
+
+    private Cluster cluster() {
+        return CouchbaseCluster.create(nodes);
+    }
+
+    @Bean
+    public Bucket bucket() {
+        return cluster().openBucket(bucket, password);
     }
 }

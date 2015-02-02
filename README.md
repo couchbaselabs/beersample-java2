@@ -1,43 +1,71 @@
 beersample-java2
 ================
 
-A sample application for the Java SDK 2.0 and Couchbase Server 3.0.
+A sample application for the Java SDK 2.0 and Couchbase Server 3.0
 
-# Building and Running
-The sample application needs the `beer-sample` sample bucket to be loaded. Additionally, the sample application needs
-additional views to be created on this bucket: `beer/by_name` and `brewery/by_name`. Refer below for the code of these
-views.
+## What's needed?
+ - The beersample sample bucket
+ - The beer/brewery_beers view (built in in beersample sample)
+ - An additional view beer/by_name with the following map function (you should copy the beer designdoc to dev in order
+ to edit it and add this view):
 
-> beer/by_name
+```
+    function (doc, meta) {
+       if (doc.type == "beer") {
+         emit(doc.name, doc.brewery_id)
+       }
+     }
+```
 
-    function(doc, meta) {
-      if (doc.type === "beer") {
-          emit(doc.name, doc.brewery_id);
-      }
-    }
+## Building and running
+Correctly configure the application for your couchbase installation by editing **`src/main/resources/application.yml`**.
 
-*Note: the beer design document already exist when loading sample, so it should be copied to development and this view
-should then be added to it before re-publishing.*
-
-> brewery/by_name
-
-    function(doc, meta) {
-      if (doc.type === "beer") {
-          emit(doc.name, doc.brewery_id);
-      }
-    }
-
-
-Once the views for the application have been created, application itself can be packaged and run:
-
-**from Maven**
-*Make sure Maven uses Java 8, see `mvn -version` for a quick check.*
-
-Open a command line in the project's folder and run:
+To build a self-contained jar of the application, run the following Maven command:
 
     mvn clean package
 
-Then run the application (which will be visible on `localhost:8081`):
+To run the application and expose the REST API on `localhost:8080`, run the following command:
 
-    java -jar target/beersample-0.0.1-SNAPSHOT.jar
+    java -jar target/beersample2-1.0-SNAPSHOT.jar
 
+## REST API
+The REST API is deployed on port 8080 and has the following routes:
+
+### Beer Routes
+ * `GET /beer/{id}`: retrieve the Beer with id {id} (one json object representing the beer)
+ * `POST /beer`: with a jsonObject in body representing the beer data, creates a new beer
+ * `PUT /beer/{id}`: with a jsonObject in body representing the updated beer data, updates a beer of id {id}
+ * `DELETE /beer/{id}`: deletes the beer of id {id}
+ * `GET /beer`: list all the beers, just outputting the beers `id` and `name` in an array of JSON objects
+ * `GET /beer/search/{partOfName}`: list all the beers which name's contains {partOfName} (ignoring case). Each returned
+ beer is represented as a JSON object with the beer's `id` and `name` and the whoe beer details under `detail`.
+
+```
+{
+    "id": "theBeerId",
+    "name": "The Beer",
+    "detail": {
+        "name": "The Beer",
+        "category": "German Ale",
+        ...
+    }
+}
+```
+
+### Brewery Routes
+ * `GET /brewery/{id}`: retrieve the details of brewery {id}, along with the list of beers produced by this brewery (in
+ a sub-array `beers`, one JSON object for each beer having the beer's id under `id` and the beer's detail under `beer`).
+
+```
+"beers": [
+    {
+        "id": "theBeerId",
+        "beer": {
+            "name": "someBeer",
+            "category": "German Ale",
+            ...
+        }
+    },
+    ...
+]
+```
