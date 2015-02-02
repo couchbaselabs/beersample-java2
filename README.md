@@ -1,5 +1,6 @@
 beersample-java2
 ================
+**This branch is a stub. Code needs to be completed in CouchbaseService, as part of the Java SDK 2.1 tutorial.**
 
 A sample application for the Java SDK 2.0 and Couchbase Server 3.0
 
