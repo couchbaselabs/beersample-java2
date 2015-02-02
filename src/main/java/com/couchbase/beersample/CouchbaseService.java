@@ -35,9 +35,6 @@ import com.couchbase.client.java.view.AsyncViewRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import rx.Observable;
 import rx.functions.Action2;
@@ -62,16 +59,16 @@ public class CouchbaseService {
     public CouchbaseService(final Database config) {
         this.config = config;
 
-        //connect to the cluster and open the configured bucket
-        Cluster cluster = CouchbaseCluster.create(config.getNodes());
-        this.bucket = cluster.openBucket(config.getBucket(), config.getPassword());
+        //FIXME connect to the cluster and open the configured bucket
+        this.bucket = null;
     }
 
     /**
      * Prepare a new JsonDocument with some JSON content
      */
     public static JsonDocument createDocument(String id, JsonObject content) {
-        return JsonDocument.create(id, content);
+        //FIXME return the prepared JsonDocument
+        return null;
     }
 
     /**
@@ -79,14 +76,16 @@ public class CouchbaseService {
      * @return the created document, with up to date metadata
      */
     public JsonDocument create(JsonDocument doc) {
-        return bucket.insert(doc);
+        //FIXME use the bucket to create a doc in database
+        return null;
     }
 
     /**
      * READ the document from database
      */
     public JsonDocument read(String id) {
-        return bucket.get(id);
+        //FIXME use the bucket to read and return a doc from database
+        return null;
     }
 
     /**
@@ -94,7 +93,8 @@ public class CouchbaseService {
      * @return the updated document, with up to date metadata
      */
     public JsonDocument update(JsonDocument doc) {
-        return bucket.replace(doc);
+        //FIXME use the bucket to update a doc in database
+        return null;
     }
 
     /**
@@ -102,7 +102,8 @@ public class CouchbaseService {
      * @return the deleted document, with only metadata (since content has been deleted)
      */
     public JsonDocument delete(String id) {
-        return bucket.remove(id);
+        //FIXME use the bucket to delete a doc in database
+        return null;
     }
 
     /**
@@ -113,14 +114,13 @@ public class CouchbaseService {
      * @param limit the limit of beers to retrieve, null or < 1 to ignore
      */
     public ViewResult findAllBeers(Integer offset, Integer limit) {
-        ViewQuery query = ViewQuery.from("beer", "by_name");
-        if (limit != null && limit > 0) {
-            query.limit(limit);
-        }
-        if (offset != null && offset > 0) {
-            query.skip(offset);
-        }
-        ViewResult result = bucket.query(query);
+        //FIXME prepare the query, choosing the right design document and view
+        ViewQuery query = null;
+
+        //FIXME augment the query with adequate parameters if offset and/or limit are set
+
+        //FIXME execute the query and return the result
+        ViewResult result = null;
         return result;
     }
 
@@ -128,15 +128,19 @@ public class CouchbaseService {
      * Retrieves all the beers using a view query, returning the result asynchronously.
      */
     public Observable<AsyncViewResult> findAllBeersAsync() {
-        ViewQuery allBeers = ViewQuery.from("beer", "by_name");
-        return bucket.async().query(allBeers);
+        //FIXME prepare a query for all beers using the right design document and view
+        ViewQuery allBeers = null;
+
+        //FIXME execute the query asynchronously
+        return null;
     }
 
     /**
      * READ the document asynchronously from database.
      */
     public Observable<JsonDocument> asyncRead(String id) {
-        return bucket.async().get(id);
+        //FIXME read the document asynchronously
+        return null;
     }
 
     /**
@@ -148,10 +152,11 @@ public class CouchbaseService {
      * @param breweryId the brewery key for which to retrieve associated beers.
      */
     public static ViewQuery createQueryBeersForBrewery(String breweryId) {
-        ViewQuery forBrewery = ViewQuery.from("beer", "brewery_beers");
-        forBrewery.startKey(JsonArray.from(breweryId));
-        //the trick here is that sorting is UTF8 based, uefff is the largest UTF8 char
-        forBrewery.endKey(JsonArray.from(breweryId, "\uefff"));
+        String veryLargeUtf8Char = "\uefff";
+        //FIXME prepare a query to list beers associated with a brewery
+        ViewQuery forBrewery = null;
+        //FIXME limit the results to beers for the specific breweryId (hint: use startKey and endKey)
+
         return forBrewery;
     }
 
@@ -162,7 +167,9 @@ public class CouchbaseService {
      * @see #createQueryBeersForBrewery(String)
      */
     public Observable<AsyncViewResult> findBeersForBreweryAsync(String breweryId) {
-        return bucket.async().query(createQueryBeersForBrewery(breweryId));
+        ViewQuery beersForBrewery = createQueryBeersForBrewery(breweryId);
+        //FIXME execute the query asynchronously
+        return null;
     }
 
     /**
@@ -176,21 +183,22 @@ public class CouchbaseService {
      */
     public static Observable<JsonDocument> concatBeerInfoToBrewery(Observable<JsonDocument> brewery,
             Observable<List<JsonDocument>> beers) {
-        return Observable.zip(brewery, beers,
-                new Func2<JsonDocument, List<JsonDocument>, JsonDocument>() {
-                    @Override
-                    public JsonDocument call(JsonDocument breweryDoc, List<JsonDocument> beersDoc) {
-                        JsonArray beers = JsonArray.create();
-                        for (JsonDocument beerDoc : beersDoc) {
-                            JsonObject beer = JsonObject.create()
-                                                        .put("id", beerDoc.id())
-                                                        .put("beer", beerDoc.content());
-                            beers.add(beer);
-                        }
-                        breweryDoc.content().put("beers", beers);
-                        return breweryDoc;
-                    }
-                });
+        //FIXME produce the correct JsonDocument stream from the stream of brewery info and the one of beers list.
+        /* Hint: Use a factory method from Observable.
+        The following code can be used in a ZIP FUNCTION to produce such a correct hybrid document:
+
+        JsonArray beers = JsonArray.create();
+        for (JsonDocument beerDoc : beersDoc) {
+            JsonObject beer = JsonObject.create()
+                            .put("id", beerDoc.id())
+                            .put("beer", beerDoc.content());
+            beers.add(beer);
+        }
+        breweryDoc.content().put("beers", beers);
+        return breweryDoc;
+
+        */
+        return null;
     }
 
     //===== Here is a more advanced example, using Async API to search in Beer names =====
@@ -203,42 +211,15 @@ public class CouchbaseService {
      */
     public Observable<JsonArray> searchBeer(Observable<AsyncViewRow> allBeers, final String token) {
         return allBeers
-                //extract the document from the row and carve a result object using its content and id
-                .flatMap(new Func1<AsyncViewRow, Observable<JsonObject>>() {
-                    @Override
-                    public Observable<JsonObject> call(AsyncViewRow row) {
-                        return row.document().map(new Func1<JsonDocument, JsonObject>() {
-                            @Override
-                            public JsonObject call(JsonDocument jsonDocument) {
-                                return JsonObject.create()
-                                                 .put("id", jsonDocument.id())
-                                                 .put("name", jsonDocument.content().getString("name"))
-                                                 .put("detail", jsonDocument.content());
-                            }
-                        });
-                    }
-                })
-                        //reject beers that don't match the partial name
-                .filter(new Func1<JsonObject, Boolean>() {
-                    @Override
-                    public Boolean call(JsonObject jsonObject) {
-                        String name = jsonObject.getString("name");
-                        return name != null && name.toLowerCase().contains(token.toLowerCase());
-                    }
-                })
-                        //collect results into a JSON array (one could also just use toList() since a List would be
-                        // transcoded into a JSON array)
-                .collect(new Func0<JsonArray>() { //this creates the array (once)
-                    @Override
-                    public JsonArray call() {
-                        return JsonArray.empty();
-                    }
-                }, new Action2<JsonArray, JsonObject>() { //this populates the array (each item)
-                    @Override
-                    public void call(JsonArray objects, JsonObject jsonObject) {
-                        objects.add(jsonObject);
-                    }
-                });
+                //FIXME extract the data for each row into an id+name+detail beer document
+                // hint: transform an AsyncViewRow into an Observable<JsonObject>
+                //FIXME reject beers that don't match the partial name
+                //collect results into a JSON array (one could also just use toList() since a List would be
+                // transcoded into a JSON array), using collect operator.
+                .collect(
+                        null, //FIXME create the array (invoked once)
+                        null  //FIXME populate the array (invoked for each item)
+                );
     }
 
 }
