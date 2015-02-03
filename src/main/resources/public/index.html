@@ -1,0 +1,26 @@
+<html>
+<body>
+<p>
+    REST API routes that can be opened in the browser:
+    <ul>
+        <li><a href="beer"><code>/beer</code></a> List all beers</li>
+        <li>
+            <a href="beer?limit=3&skip=2"><code>/beer?limit=3&skip=2</code></a> List only 3 beers out of them all,
+            and skip first 2 beers
+        </li>
+        <li>
+            <a href="beer/search/dark"><code>/beer/search/{token}</code></a> List all beers that contains {token}
+            (eg. "dark")
+        </li>
+        <li>
+            <a href="beer/512_brewing_company-512_ipa">
+            <code>/beer/{id}</code></a> Return info on one beer, of id {id}
+        </li>
+        <li>
+            <a href="brewery/512_brewing_company"><code>/brewery/{id}</code></a> Prints
+            details about a brewery of id {id} and the detailed list of all its beers.
+        </li>
+    </ul>
+</p>
+</body>
+</html>
