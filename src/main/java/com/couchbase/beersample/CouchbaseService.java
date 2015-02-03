@@ -23,6 +23,8 @@ package com.couchbase.beersample;
 
 import java.util.List;
 
+import javax.annotation.PreDestroy;
+
 import com.couchbase.beersample.config.Database;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
@@ -57,14 +59,22 @@ public class CouchbaseService {
     private final Database config;
 
     private final Bucket bucket;
+    private final Cluster cluster;
 
     @Autowired
     public CouchbaseService(final Database config) {
         this.config = config;
 
         //connect to the cluster and open the configured bucket
-        Cluster cluster = CouchbaseCluster.create(config.getNodes());
+        this.cluster = CouchbaseCluster.create(config.getNodes());
         this.bucket = cluster.openBucket(config.getBucket(), config.getPassword());
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        if (this.cluster != null) {
+            this.cluster.disconnect();
+        }
     }
 
     /**
